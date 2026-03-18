@@ -8,7 +8,6 @@ _G.Settings = {
     SelectTeam = "Pirates", 
     AutoFarm = false,
     ShowGui = true,
-    -- Đổi sang màu Xanh Dương Neon
     GuiColor = Color3.fromRGB(0, 150, 255) 
 }
 
@@ -16,19 +15,19 @@ _G.Settings = {
 
 -- Hàm chọn phe
 local function JoinTeam()
-    local success, err = pcall(function()
+    pcall(function()
         if game:GetService("Players").LocalPlayer.Team == nil then
             game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", _G.Settings.SelectTeam)
         end
     end)
 end
 
--- Hàm tạo Giao diện (Đã đưa ra ngoài để không bị lỗi)
+-- Hàm tạo Giao diện
 local function CreateKhiemGui()
     local ScreenGui = Instance.new("ScreenGui")
-    local FloatingBtn = Instance.new("Frame")
+    local FloatingBtn = Instance.new("TextButton") -- Đổi thành TextButton để bắt sự kiện Click tốt hơn
     local UICorner = Instance.new("UICorner")
-    local UIStroke = Instance.new("UIStroke") -- Thêm viền cho đẹp
+    local UIStroke = Instance.new("UIStroke")
     local LogPanel = Instance.new("ScrollingFrame")
     local UIListLayout = Instance.new("UIListLayout")
     local UIPadding = Instance.new("UIPadding")
@@ -37,59 +36,67 @@ local function CreateKhiemGui()
     ScreenGui.Parent = game:GetService("CoreGui")
     ScreenGui.ResetOnSpawn = false
 
-    -- Nút tròn nổi màu Xanh (Đã thu nhỏ)
+    -- Nút tròn nổi (Kích thước 45x45 cho vừa tay)
     FloatingBtn.Name = "FloatingBtn"
     FloatingBtn.Parent = ScreenGui
     FloatingBtn.BackgroundColor3 = _G.Settings.GuiColor
     FloatingBtn.Position = UDim2.new(0.1, 0, 0.5, 0)
-    FloatingBtn.Size = UDim2.new(0, 40, 0, 40) -- Kích thước mới nhỏ gọn
+    FloatingBtn.Size = UDim2.new(0, 45, 0, 45)
+    FloatingBtn.Text = "" -- Xóa chữ mặc định
     FloatingBtn.Active = true
     FloatingBtn.Draggable = true 
 
     UICorner.CornerRadius = UDim.new(1, 0)
     UICorner.Parent = FloatingBtn
     
-    -- Thêm viền trắng mờ cho nút
     UIStroke.Parent = FloatingBtn
-    UIStroke.Thickness = 1.5 -- Giảm độ dày viền cho hợp với nút nhỏ
+    UIStroke.Thickness = 2
     UIStroke.Color = Color3.fromRGB(255, 255, 255)
-    UIStroke.Transparency = 0.5
+    UIStroke.Transparency = 0.4
 
-    -- Bảng hiện Log (Giao diện đen xanh)
+    -- Bảng hiện Log
     LogPanel.Name = "LogPanel"
-    LogPanel.Parent = FloatingBtn
-    LogPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 20) 
-    LogPanel.BackgroundTransparency = 0.2
-    LogPanel.Position = UDim2.new(1.1, 0, -2, 0) -- Nhích lại gần nút hơn
+    LogPanel.Parent = ScreenGui -- Đưa ra ngoài ScreenGui để không bị lệ thuộc vị trí nút
+    LogPanel.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+    LogPanel.BorderSizePixel = 0
+    LogPanel.Position = UDim2.new(0.1, 55, 0.4, 0) -- Hiện cố định cạnh vị trí ban đầu của nút
+    LogPanel.Size = UDim2.new(0, 260, 0, 180)
+    LogPanel.Visible = false
+    LogPanel.CanvasSize = UDim2.new(0, 0, 0, 0)
+    LogPanel.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
     UIListLayout.Parent = LogPanel
     UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     
     UIPadding.Parent = LogPanel
-    UIPadding.PaddingLeft = UDim.new(0, 10)
-    UIPadding.PaddingTop = UDim.new(0, 10)
+    UIPadding.PaddingLeft = UDim.new(0, 8)
+    UIPadding.PaddingTop = UDim.new(0, 8)
 
-    -- Hàm Print riêng của Khiêm Roblox
+    -- Thêm viền cho bảng Log
+    local PanelStroke = Instance.new("UIStroke")
+    PanelStroke.Parent = LogPanel
+    PanelStroke.Color = _G.Settings.GuiColor
+    PanelStroke.Thickness = 1
+
+    -- Hàm Print của Khiêm
     _G.KhiemPrint = function(text)
         local Label = Instance.new("TextLabel")
         Label.Parent = LogPanel
-        Label.Size = UDim2.new(1, -10, 0, 25)
+        Label.Size = UDim2.new(1, -10, 0, 22)
         Label.BackgroundTransparency = 1
-        Label.TextColor3 = Color3.fromRGB(200, 230, 255) -- Chữ xanh nhạt
-        Label.TextSize = 14
+        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.TextSize = 13
         Label.Font = Enum.Font.GothamBold
-        Label.Text = "[Khiêm Log]: " .. text
+        Label.Text = "> " .. tostring(text)
         Label.TextXAlignment = Enum.TextXAlignment.Left
-        
-        -- Tự cuộn xuống dưới cùng
         LogPanel.CanvasPosition = Vector2.new(0, 9999)
     end
 
-    -- Bấm nút hiện bảng
-    FloatingBtn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            LogPanel.Visible = not LogPanel.Visible
-        end
+    -- SỰ KIỆN CLICK ĐỂ HIỆN BẢNG
+    FloatingBtn.MouseButton1Click:Connect(function()
+        LogPanel.Visible = not LogPanel.Visible
+        -- Cập nhật vị trí bảng Log theo vị trí hiện tại của nút khi bấm
+        LogPanel.Position = UDim2.new(0, FloatingBtn.AbsolutePosition.X + 55, 0, FloatingBtn.AbsolutePosition.Y - 50)
     end)
 end
 
@@ -97,15 +104,15 @@ end
 JoinTeam()
 CreateKhiemGui()
 
-_G.KhiemPrint("Chào mừng đến với Khiêm Roblox Hub!")
-_G.KhiemPrint("Đang khởi tạo hệ thống...")
-_G.KhiemPrint("Đã chọn phe: " .. _G.Settings.SelectTeam)
+_G.KhiemPrint("Khiêm Roblox Hub Loaded!")
+_G.KhiemPrint("---------------------------")
+_G.KhiemPrint("Phe: " .. _G.Settings.SelectTeam)
 
 -- 5. VÒNG LẶP CHÍNH
 spawn(function()
     while wait() do
         if _G.Settings.AutoFarm then
-            -- Chỗ này để viết Auto Farm
+            -- Chờ code farm tiếp theo
         end
     end
 end)
