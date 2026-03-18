@@ -7,6 +7,10 @@ repeat wait() until game:IsLoaded()
 _G.Settings = {
     SelectTeam = "Pirates", 
     AutoFarm = false,
+    AutoBounty = false,      -- Bật/tắt săn người
+    MinHealthToRun = 50,     -- Máu dưới 50% thì chạy
+    MinHealthToBack = 75,    -- Máu trên 75% thì quay lại đánh
+    Target = nil,            -- Mục tiêu hiện tại
     ShowGui = true,
     GuiColor = Color3.fromRGB(0, 150, 255) 
 }
@@ -24,6 +28,60 @@ end
 
 -- Hàm tạo Giao diện
 local function CreateKhiemGui()
+    local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+
+-- 1. Hàm Tween (Di chuyển mượt mà)
+local function TweenTo(Pos)
+    local Distance = (LP.Character.HumanoidRootPart.Position - Pos.Position).Magnitude
+    local Speed = 300 -- Tốc độ bay
+    local Tween = game:GetService("TweenService"):Create(LP.Character.HumanoidRootPart, TweenInfo.new(Distance/Speed, Enum.EasingStyle.Linear), {CFrame = Pos})
+    Tween:Play()
+    return Tween
+end
+
+-- 2. Hàm Click M1 siêu nhanh (1ms)
+local function AutoClick()
+    local VirtualUser = game:GetService("VirtualUser")
+    VirtualUser:CaptureController()
+    VirtualUser:Button1Down(Vector2.new(1280, 672))
+end
+
+-- 3. Hàm kiểm tra kẻ địch hợp lệ
+local function GetTargets()
+        -- 4. Hàm tự động cầm Trái Ác Quỷ
+local function EquipFruit()
+    local Character = LP.Character
+    local Backpack = LP.Backpack
+    
+    -- Kiểm tra xem trên tay đã cầm Trái Ác Quỷ chưa
+    for _, tool in pairs(Character:GetChildren()) do
+        if tool:IsA("Tool") and (tool.ToolTip == "Blox Fruit" or tool:FindFirstChild("EatRemote")) then
+            return -- Đã cầm rồi thì thôi
+        end
+    end
+    
+    -- Nếu chưa cầm, tìm trong túi đồ (Backpack)
+    for _, tool in pairs(Backpack:GetChildren()) do
+        -- Blox Fruits định nghĩa Trái Ác Quỷ qua ToolTip hoặc các thuộc tính đặc trưng
+        if tool:IsA("Tool") and (tool.ToolTip == "Blox Fruit" or tool:FindFirstChild("EatRemote")) then
+            Character.Humanoid:EquipTool(tool)
+            _G.KhiemPrint("Đã cầm: " .. tool.Name)
+            break
+        end
+    end
+end
+    local Targets = {}
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LP and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
+            -- Kiểm tra PvP và Safezone (Dựa trên folder Combat của game)
+            if v.Character:FindFirstChild("CombatPD") or v.UserId % 2 == 0 then -- Kiểm tra tạm thời
+                table.insert(Targets, v)
+            end
+        end
+    end
+    return Targets
+end
     local ScreenGui = Instance.new("ScreenGui")
     local FloatingBtn = Instance.new("TextButton") -- Đổi thành TextButton để bắt sự kiện Click tốt hơn
     local UICorner = Instance.new("UICorner")
@@ -108,11 +166,59 @@ _G.KhiemPrint("Khiêm Roblox Hub Loaded!")
 _G.KhiemPrint("---------------------------")
 _G.KhiemPrint("Phe: " .. _G.Settings.SelectTeam)
 
--- 5. VÒNG LẶP CHÍNH
+-- 5. VÒNG LẶP CHÍNH (PVP LOGIC)
 spawn(function()
     while wait() do
-        if _G.Settings.AutoFarm then
-            -- Chờ code farm tiếp theo
+        if _G.Settings.AutoBounty then
+            local MyHuman = LP.Character:FindFirstChild("Humanoid")
+            
+            -- HỆ THỐNG HỒI MÁU (NÉ TRÁNH)
+            if MyHuman and (MyHuman.Health / MyHuman.MaxHealth) * 100 < _G.Settings.MinHealthToRun then
+                _G.KhiemPrint("Máu thấp! Đang bay lên cao hồi phục...")
+                LP.Character.HumanoidRootPart.CFrame = CFrame.new(LP.Character.HumanoidRootPart.Position.X, 4000, LP.Character.HumanoidRootPart.Position.Z)
+                repeat wait() until (MyHuman.Health / MyHuman.MaxHealth) * 100 > _G.Settings.MinHealthToBack
+                _G.KhiemPrint("Máu đã ổn, quay lại trận chiến!")
+            end
+
+            -- HỆ THỐNG SĂN ĐUỔI
+            local List = GetTargets()
+            for _, Enemy in pairs(List) do
+                if not _G.Settings.AutoBounty then break end
+                
+                _G.Settings.Target = Enemy
+                _G.KhiemPrint("Đang nhắm vào: " .. Enemy.Name)
+
+                while _G.Settings.AutoBounty and Enemy.Character and Enemy.Character.Humanoid.Health > 0 do
+                    local EnemyPart = Enemy.Character:FindFirstChild("HumanoidRootPart")
+                    if EnemyPart then
+                        -- TWEEN ĐẾN SAU LƯNG ĐỐI THỦ
+                        TweenTo(EnemyPart.CFrame * CFrame.new(0, 0, 3))
+                        
+                        -- [[ NEW ]] TỰ CẦM TRÁI ÁC QUỶ TRƯỚC KHI ĐÁNH
+                        EquipFruit()
+                        
+                        -- SPAM CLICK 1ms
+                        AutoClick()
+                        
+                        -- NÉ CHIÊU
+                        if (LP.Character.HumanoidRootPart.Position - EnemyPart.Position).Magnitude < 10 then
+                            LP.Character.HumanoidRootPart.CFrame = EnemyPart.CFrame * CFrame.new(0, 200, 0)
+                            wait(0.5)
+                        end
+                    end
+                    wait()
+                end
+                        -- Logic né: Bay lên cao 200m nếu đối thủ ở quá gần
+                        if (LP.Character.HumanoidRootPart.Position - EnemyPart.Position).Magnitude < 10 then
+                            -- Nhích nhẹ lên cao để tránh chiêu đánh lan
+                            LP.Character.HumanoidRootPart.CFrame = EnemyPart.CFrame * CFrame.new(0, 200, 0)
+                            wait(0.5)
+                        end
+                    end
+                    wait()
+                end
+                _G.KhiemPrint("Đối thủ đã gục hoặc mất dấu!")
+            end
         end
     end
 end)
