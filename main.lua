@@ -37,12 +37,12 @@ local function CreateKhiemGui()
     ScreenGui.Parent = game:GetService("CoreGui")
     ScreenGui.ResetOnSpawn = false
 
-    -- Nút tròn nổi màu Xanh
+    -- Nút tròn nổi màu Xanh (Đã thu nhỏ)
     FloatingBtn.Name = "FloatingBtn"
     FloatingBtn.Parent = ScreenGui
     FloatingBtn.BackgroundColor3 = _G.Settings.GuiColor
     FloatingBtn.Position = UDim2.new(0.1, 0, 0.5, 0)
-    FloatingBtn.Size = UDim2.new(0, 60, 0, 60) -- To hơn xíu cho dễ bấm
+    FloatingBtn.Size = UDim2.new(0, 40, 0, 40) -- Kích thước mới nhỏ gọn
     FloatingBtn.Active = true
     FloatingBtn.Draggable = true 
 
@@ -51,20 +51,16 @@ local function CreateKhiemGui()
     
     -- Thêm viền trắng mờ cho nút
     UIStroke.Parent = FloatingBtn
-    UIStroke.Thickness = 2
+    UIStroke.Thickness = 1.5 -- Giảm độ dày viền cho hợp với nút nhỏ
     UIStroke.Color = Color3.fromRGB(255, 255, 255)
     UIStroke.Transparency = 0.5
 
     -- Bảng hiện Log (Giao diện đen xanh)
     LogPanel.Name = "LogPanel"
     LogPanel.Parent = FloatingBtn
-    LogPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 20) -- Đen xanh tối
+    LogPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 20) 
     LogPanel.BackgroundTransparency = 0.2
-    LogPanel.Position = UDim2.new(1.2, 0, -2, 0)
-    LogPanel.Size = UDim2.new(0, 280, 0, 200)
-    LogPanel.Visible = false
-    LogPanel.CanvasSize = UDim2.new(0, 0, 0, 0)
-    LogPanel.AutomaticCanvasSize = Enum.AutomaticSize.Y -- Tự cuộn khi nhiều chữ
+    LogPanel.Position = UDim2.new(1.1, 0, -2, 0) -- Nhích lại gần nút hơn
 
     UIListLayout.Parent = LogPanel
     UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
