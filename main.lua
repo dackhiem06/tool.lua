@@ -7,7 +7,7 @@ repeat wait() until game:IsLoaded()
 _G.Settings = {
     SelectTeam = "Pirates", 
     AutoFarm = false,
-    AutoBounty = false,      -- Bật/tắt săn người
+    AutoBounty = true,      -- Bật/tắt săn người
     MinHealthToRun = 50,     -- Máu dưới 50% thì chạy
     MinHealthToBack = 75,    -- Máu trên 75% thì quay lại đánh
     Target = nil,            -- Mục tiêu hiện tại
